@@ -390,6 +390,7 @@ fun faceCaptureNotificationCompletion() = object : FaceCaptureNotificationCallba
 }
 
 fun livenessCompletion(callback: Callback) = LivenessCallback {
+    AppLivenessSession.clear()
     callback(generateLivenessResponse(it))
 }
 

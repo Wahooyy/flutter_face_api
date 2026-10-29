@@ -6,6 +6,8 @@ class LivenessConfig {
   /// Android: use myEmployee's camera and processing/retry UI fragments.
   /// Capture, liveness assessment and retry handling remain owned by Face SDK.
   bool useAppUi;
+  /// Optional presentation-only data for the host Flutter UI on Android.
+  Map<String, dynamic>? appUiData;
   /// Defines, whether the logo is visible on the bottom of Liveness UI screens. Defaults to `true`.
   bool copyright;
 
@@ -63,6 +65,7 @@ class LivenessConfig {
 
   LivenessConfig({
     bool useAppUi = false,
+    Map<String, dynamic>? appUiData,
     bool copyright = true,
     bool cameraSwitchEnabled = false,
     bool closeButtonEnabled = true,
@@ -80,6 +83,7 @@ class LivenessConfig {
     List<LivenessSkipStep> skipStep = const [],
     dynamic metadata,
   })  : useAppUi = useAppUi,
+        appUiData = appUiData,
         copyright = copyright,
         cameraSwitchEnabled = cameraSwitchEnabled,
         closeButtonEnabled = closeButtonEnabled,
@@ -102,6 +106,7 @@ class LivenessConfig {
     if (jsonObject == null) return null;
     var result = LivenessConfig();
     result.useAppUi = jsonObject["useAppUi"] ?? false;
+    result.appUiData = (jsonObject["appUiData"] as Map?)?.cast<String, dynamic>();
 
     result.copyright = jsonObject["copyright"];
     result.cameraSwitchEnabled = jsonObject["cameraSwitchEnabled"];
@@ -126,6 +131,7 @@ class LivenessConfig {
   @visibleForTesting
   Map<String, dynamic> toJson() => {
         "useAppUi": useAppUi,
+        "appUiData": appUiData,
         "copyright": copyright,
         "cameraSwitchEnabled": cameraSwitchEnabled,
         "closeButtonEnabled": closeButtonEnabled,

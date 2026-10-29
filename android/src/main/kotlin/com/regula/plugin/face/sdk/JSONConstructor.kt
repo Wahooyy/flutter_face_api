@@ -105,6 +105,7 @@ fun livenessConfigFromJSON(input: JSONObject) = input.let {
     val result = LivenessConfiguration.Builder()
     setLivenessConfig(result, it)
     if (it.optBoolean("useAppUi", false)) {
+        AppLivenessSession.set(it.optJSONObject("appUiData"))
         result.registerUiFragmentClass(AppLivenessCameraFragment::class.java)
         result.registerProcessingFragment(AppLivenessProcessingFragment::class.java)
     }
