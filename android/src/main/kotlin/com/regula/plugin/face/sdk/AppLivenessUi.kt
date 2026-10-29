@@ -1,26 +1,98 @@
 package com.regula.plugin.face.sdk
 
-import android.graphics.Typeface
+import android.graphics.Color
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
+import android.widget.FrameLayout
 import android.widget.TextView
 import com.regula.facesdk.fragment.BaseFaceLivenessProcessingFragment
 import com.regula.facesdk.fragment.FaceUiFragment
+import io.flutter.FlutterInjector
+import io.flutter.embedding.android.FlutterTextureView
+import io.flutter.embedding.android.FlutterView
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.embedding.engine.dart.DartExecutor
+import io.flutter.plugin.common.MethodChannel
 
-// App-owned views are plugged into the supported SDK fragment hooks.
-// The SDK retains camera/session ownership, liveness decisions and retry actions.
-private fun styleAppText(view: View) {
-    if (view is TextView) {
-        val title = view.id == R.id.app_face_title
-        val asset = if (title) "BricolageGrotesque-Medium.ttf" else "GTWalsheimPro-Medium.ttf"
-        view.typeface = runCatching {
-            Typeface.createFromAsset(view.context.assets, "flutter_assets/assets/fonts/$asset")
-        }.getOrDefault(Typeface.create("sans-serif-medium", Typeface.NORMAL))
+/** Renders the host application's real Flutter widgets above the SDK camera.
+ * Plugin auto-registration is disabled: a second Face SDK/camera plugin must
+ * never replace the primary engine's native callbacks or camera ownership.
+ */
+private class AppFlutterUi(
+    private val root: View,
+    private val state: () -> Map<String, Any>,
+    private val close: () -> Unit,
+    private val retry: (() -> Unit)? = null,
+) : ViewTreeObserver.OnGlobalLayoutListener {
+    private val engine = FlutterEngine(root.context, null, false)
+    private val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "myemployee/regula_ui")
+    private val flutterView = FlutterView(root.context, FlutterTextureView(root.context).apply { isOpaque = false })
+    private var ready = false
+    private var destroyed = false
+    private var lastState: Map<String, Any>? = null
+
+    init {
+        flutterView.setBackgroundColor(Color.TRANSPARENT)
+        root.findViewById<FrameLayout>(R.id.app_face_flutter).addView(
+            flutterView, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "ready" -> {
+                    ready = true
+                    result.success(state().also { lastState = it })
+                }
+                "close" -> {
+                    result.success(null)
+                    root.post { if (!destroyed) close() }
+                }
+                "retry" -> {
+                    if (state()["phase"] != "retry" || retry == null) {
+                        result.error("NOT_READY", "Retry is not available in this SDK state", null)
+                    } else {
+                        result.success(null)
+                        root.post { if (!destroyed) retry.invoke() }
+                    }
+                }
+                else -> result.notImplemented()
+            }
+        }
+        flutterView.attachToFlutterEngine(engine)
+        val bundle = FlutterInjector.instance().flutterLoader().findAppBundlePath()
+        engine.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint(bundle, "regulaLivenessUi"))
+        root.viewTreeObserver.addOnGlobalLayoutListener(this)
+        resume()
     }
-    if (view is ViewGroup) for (i in 0 until view.childCount) styleAppText(view.getChildAt(i))
+
+    fun refresh() {
+        if (!ready || destroyed) return
+        val next = state()
+        if (next != lastState) {
+            lastState = next
+            channel.invokeMethod("state", next)
+        }
+    }
+
+    override fun onGlobalLayout() = refresh()
+    fun resume() { if (!destroyed) engine.lifecycleChannel.appIsResumed() }
+    fun pause() { if (!destroyed) engine.lifecycleChannel.appIsInactive() }
+
+    fun dispose() {
+        if (destroyed) return
+        destroyed = true
+        if (root.viewTreeObserver.isAlive) root.viewTreeObserver.removeOnGlobalLayoutListener(this)
+        channel.setMethodCallHandler(null)
+        flutterView.detachFromFlutterEngine()
+        engine.lifecycleChannel.appIsDetached()
+        engine.destroy()
+    }
 }
 
 class AppLivenessCameraFragment : FaceUiFragment() {
+    private var appUi: AppFlutterUi? = null
     override fun getResourceLayoutId() = R.layout.app_liveness_camera
     override fun getCloseButton(view: View): View = view.findViewById(R.id.app_face_close)
     override fun getSwapCameraButton(view: View): View = view.findViewById(R.id.app_face_swap)
@@ -28,11 +100,24 @@ class AppLivenessCameraFragment : FaceUiFragment() {
     override fun getNotificationView(view: View): TextView = view.findViewById(R.id.app_face_notification)
     override fun initUI(view: View) {
         super.initUI(view)
-        styleAppText(view)
+        appUi = AppFlutterUi(view,
+            state = { mapOf("phase" to "camera", "message" to getNotificationView(view).text.toString()) },
+            close = { getCloseButton(view).performClick() },
+        )
+        getNotificationView(view).addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { appUi?.refresh() }
+            override fun afterTextChanged(s: Editable?) {}
+        })
     }
+    override fun onResume() { super.onResume(); appUi?.resume() }
+    override fun onPause() { appUi?.pause(); super.onPause() }
+    override fun onDestroyView() { appUi?.dispose(); appUi = null; super.onDestroyView() }
 }
 
 class AppLivenessProcessingFragment : BaseFaceLivenessProcessingFragment() {
+    private var appUi: AppFlutterUi? = null
+    private var errors = emptyList<Int>()
     override fun getResourceLayoutId() = R.layout.app_liveness_processing
     override fun getCloseButton(view: View): View = view.findViewById(R.id.app_face_close)
     override fun getCancelButton(view: View): View = getCloseButton(view)
@@ -44,16 +129,22 @@ class AppLivenessProcessingFragment : BaseFaceLivenessProcessingFragment() {
     override fun getBadQualityRetryView(view: View): View = view.findViewById(R.id.app_face_retry_quality)
     override fun initUI(view: View) {
         super.initUI(view)
-        styleAppText(view)
+        appUi = AppFlutterUi(view,
+            state = {
+                val phase = when {
+                    getRetryLayout(view).isShown -> "retry"
+                    getVerifyLayout(view).isShown -> "verified"
+                    else -> "processing"
+                }
+                mapOf("phase" to phase, "codes" to errors,
+                    "quality" to getBadQualityRetryView(view).isShown)
+            },
+            close = { getCancelButton(view).performClick() },
+            retry = { getRetryButton(view).performClick() },
+        )
     }
-    override fun faceSdkError(errors: IntArray) {
-        val message = when {
-            errors.any { it == 244 || it == 245 || it == 254 || it == 255 } ->
-                "Liveness belum lolos. Gunakan wajah langsung, bukan foto atau video dari layar."
-            errors.any { it == 231 || it == 232 || it == 240 } ->
-                "Pastikan wajah tidak tertutup dan pencahayaan merata, lalu coba lagi."
-            else -> "Pemeriksaan wajah belum berhasil. Atur posisi wajah dan coba lagi."
-        }
-        view?.findViewById<TextView>(R.id.app_face_retry_default)?.text = message
-    }
+    override fun faceSdkError(errors: IntArray) { this.errors = errors.toList(); appUi?.refresh() }
+    override fun onResume() { super.onResume(); appUi?.resume() }
+    override fun onPause() { appUi?.pause(); super.onPause() }
+    override fun onDestroyView() { appUi?.dispose(); appUi = null; super.onDestroyView() }
 }
