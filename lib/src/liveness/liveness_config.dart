@@ -3,6 +3,9 @@ part of "../../flutter_face_api.dart";
 /// Configuration for the Liveness processing.
 /// The configuration provides convenient properties to change the behavior and the appearance of the Liveness UI module.
 class LivenessConfig {
+  /// Android: use myEmployee's camera and processing/retry UI fragments.
+  /// Capture, liveness assessment and retry handling remain owned by Face SDK.
+  bool useAppUi;
   /// Defines, whether the logo is visible on the bottom of Liveness UI screens. Defaults to `true`.
   bool copyright;
 
@@ -59,6 +62,7 @@ class LivenessConfig {
   dynamic metadata;
 
   LivenessConfig({
+    bool useAppUi = false,
     bool copyright = true,
     bool cameraSwitchEnabled = false,
     bool closeButtonEnabled = true,
@@ -75,7 +79,8 @@ class LivenessConfig {
     String? tag,
     List<LivenessSkipStep> skipStep = const [],
     dynamic metadata,
-  })  : copyright = copyright,
+  })  : useAppUi = useAppUi,
+        copyright = copyright,
         cameraSwitchEnabled = cameraSwitchEnabled,
         closeButtonEnabled = closeButtonEnabled,
         torchButtonEnabled = torchButtonEnabled,
@@ -96,6 +101,7 @@ class LivenessConfig {
   static LivenessConfig? fromJson(dynamic jsonObject) {
     if (jsonObject == null) return null;
     var result = LivenessConfig();
+    result.useAppUi = jsonObject["useAppUi"] ?? false;
 
     result.copyright = jsonObject["copyright"];
     result.cameraSwitchEnabled = jsonObject["cameraSwitchEnabled"];
@@ -119,6 +125,7 @@ class LivenessConfig {
 
   @visibleForTesting
   Map<String, dynamic> toJson() => {
+        "useAppUi": useAppUi,
         "copyright": copyright,
         "cameraSwitchEnabled": cameraSwitchEnabled,
         "closeButtonEnabled": closeButtonEnabled,

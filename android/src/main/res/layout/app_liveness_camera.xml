@@ -1,0 +1,28 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <LinearLayout android:id="@+id/app_face_header" android:orientation="horizontal"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="16dp" android:gravity="center_vertical" android:background="#EBF8FF">
+        <TextView android:id="@+id/app_face_close" android:layout_width="48dp" android:layout_height="48dp"
+            android:gravity="center" android:text="‹" android:textSize="32sp" android:textColor="#111111"
+            android:background="@drawable/app_face_panel" android:contentDescription="Kembali" />
+        <TextView android:id="@+id/app_face_title" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:layout_marginHorizontal="12dp" android:gravity="center"
+            android:text="Verifikasi Wajah" android:textColor="#111111" android:textSize="22sp" />
+        <TextView android:id="@+id/app_face_swap" android:layout_width="40dp" android:layout_height="40dp"
+            android:text="↻" android:textSize="26sp" android:gravity="center" android:visibility="gone"
+            android:contentDescription="Ganti kamera" />
+        <TextView android:id="@+id/app_face_flash" android:layout_width="40dp" android:layout_height="40dp"
+            android:text="☀" android:textSize="24sp" android:gravity="center" android:visibility="gone"
+            android:contentDescription="Lampu kamera" />
+    </LinearLayout>
+    <LinearLayout android:id="@+id/app_face_footer" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="bottom" android:layout_margin="16dp" android:padding="20dp"
+        android:orientation="vertical" android:background="@drawable/app_face_panel">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="Arahkan wajah ke kamera" android:textColor="#111111" android:textSize="18sp" android:gravity="center" />
+        <TextView android:id="@+id/app_face_notification" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" android:textColor="#6C757D" android:textSize="14sp" android:gravity="center"
+            android:text="Wajah terlihat jelas, tanpa filter, dengan pencahayaan merata." />
+    </LinearLayout>
+</FrameLayout>

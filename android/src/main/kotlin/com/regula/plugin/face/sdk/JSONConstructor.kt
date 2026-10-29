@@ -104,6 +104,10 @@ fun generateFaceCaptureConfig(input: FaceCaptureConfiguration) = getFaceCaptureC
 fun livenessConfigFromJSON(input: JSONObject) = input.let {
     val result = LivenessConfiguration.Builder()
     setLivenessConfig(result, it)
+    if (it.optBoolean("useAppUi", false)) {
+        result.registerUiFragmentClass(AppLivenessCameraFragment::class.java)
+        result.registerProcessingFragment(AppLivenessProcessingFragment::class.java)
+    }
     result.build()
 }!!
 

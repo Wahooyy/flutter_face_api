@@ -1,0 +1,34 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#FFFFFF">
+    <TextView android:id="@+id/app_face_close" android:layout_width="48dp" android:layout_height="48dp"
+        android:layout_margin="16dp" android:gravity="center" android:text="‹" android:textSize="32sp"
+        android:textColor="#111111" android:background="@drawable/app_face_panel" android:contentDescription="Kembali" />
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent"
+        android:layout_marginTop="80dp" android:padding="24dp" android:gravity="center" android:orientation="vertical">
+        <LinearLayout android:id="@+id/app_face_processing" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center">
+            <ProgressBar android:layout_width="48dp" android:layout_height="48dp" android:indeterminateTint="#111111" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="20dp"
+                android:text="Memeriksa wajah…" android:textColor="#111111" android:textSize="20sp" android:gravity="center" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/app_face_retry" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center" android:visibility="gone">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Coba sekali lagi" android:textColor="#111111" android:textSize="24sp" android:gravity="center" />
+            <TextView android:id="@+id/app_face_retry_default" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" android:textColor="#6C757D" android:textSize="16sp" android:gravity="center"
+                android:text="Pemeriksaan wajah belum berhasil. Gunakan wajah langsung dengan pencahayaan merata." />
+            <TextView android:id="@+id/app_face_retry_quality" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="16dp" android:textColor="#6C757D" android:textSize="16sp" android:gravity="center"
+                android:visibility="gone" android:text="Gambar wajah kurang jelas. Bersihkan kamera dan arahkan wajah ke cahaya." />
+            <TextView android:id="@+id/app_face_retry_button" android:layout_width="match_parent" android:layout_height="52dp"
+                android:layout_marginTop="24dp" android:background="@drawable/app_face_primary" android:gravity="center"
+                android:text="Coba lagi" android:textSize="16sp" android:textColor="#FFFFFF" />
+        </LinearLayout>
+        <LinearLayout android:id="@+id/app_face_verified" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center" android:visibility="gone">
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Pemeriksaan selesai" android:textSize="22sp" android:textColor="#22B07E" android:gravity="center" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
